@@ -28,6 +28,10 @@ VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" Info.pli
 git fetch -q origin
 [[ "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || fail "Local main differs from origin/main"
 git rev-parse -q --verify "refs/tags/$TAG" >/dev/null && fail "Tag $TAG already exists"
+git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null && fail "Tag $TAG already exists on GitHub"
+# A branch with the tag's name makes "$TAG" ambiguous to git; catch it before spending time notarizing.
+git rev-parse -q --verify "refs/heads/$TAG" >/dev/null && fail "A local branch is named $TAG; rename or delete it first"
+git ls-remote --exit-code --heads origin "refs/heads/$TAG" >/dev/null && fail "A branch on GitHub is named $TAG; rename or delete it first"
 
 IDENTITY="${SIGN_IDENTITY:-$(security find-identity -v -p codesigning \
   | sed -nE 's/.*"(Developer ID Application: [^"]+)".*/\1/p' | head -1)}"
@@ -65,7 +69,7 @@ Signed with Developer ID and notarized by Apple. Works on macOS 13 or later, on 
 EOF
 
 git tag -a "$TAG" -m "Pastry $TAG"
-git push origin "$TAG"
+git push origin "refs/tags/$TAG"   # full ref name, so it can never be mistaken for a branch
 gh release create "$TAG" "$ZIP" "$ZIP.sha256" \
   --verify-tag --title "Pastry $TAG" --notes-file build/notes.md --generate-notes
 echo "✓ Published Pastry $TAG"
