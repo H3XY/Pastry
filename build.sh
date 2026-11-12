@@ -16,8 +16,14 @@ xcrun swiftc -O -swift-version 5 -parse-as-library \
 
 cp Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
-codesign --force --sign - "$APP"
-echo "Built $APP"
+# Sign with a real certificate when one is available, so macOS keeps the
+# Accessibility permission across rebuilds. An ad-hoc signature (the fallback,
+# also used on CI) changes on every build and macOS then forgets the permission.
+# Override with SIGN_IDENTITY="Your Identity" ./build.sh, or SIGN_IDENTITY=- for ad-hoc.
+IDENTITY="${SIGN_IDENTITY:-$(security find-identity -v -p codesigning 2>/dev/null \
+  | sed -nE 's/.*"((Apple Development|Developer ID Application): [^"]+)".*/\1/p' | head -1)}"
+codesign --force --sign "${IDENTITY:--}" "$APP"
+echo "Built $APP (signed: ${IDENTITY:-ad-hoc})"
 
 if [[ "${1:-}" == "--install" ]]; then
   DEST="$HOME/Applications/Pastry.app"
