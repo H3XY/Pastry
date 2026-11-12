@@ -15,6 +15,7 @@ xcrun swiftc -O -swift-version 5 -parse-as-library \
   -o "$APP/Contents/MacOS/Pastry"
 
 cp Info.plist "$APP/Contents/Info.plist"
+cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 codesign --force --sign - "$APP"
 echo "Built $APP"
 
