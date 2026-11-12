@@ -1,4 +1,6 @@
-# 🥐 Pastry
+<img src="Resources/AppIcon-1024.png" width="128" alt="Pastry icon: a pasty">
+
+# Pastry
 
 A small, native clipboard history app for macOS, made to work like **Win+V** on Windows.
 
@@ -55,6 +57,7 @@ To paste straight into the app you're using, Pastry needs **Accessibility** acce
 | `Sources/PanelController.swift` | Non-activating floating panel, so the app you were typing in keeps focus, plus keyboard handling and the simulated ⌘V |
 | `Sources/HistoryView.swift` | The SwiftUI list UI |
 | `Sources/App.swift` | Menu bar item and settings |
+| `tools/make-icon.swift` | Draws the pasty app icon into `Resources/AppIcon.icns` (run `xcrun swift tools/make-icon.swift`) |
 
 ## Contributing
 
