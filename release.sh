@@ -9,7 +9,7 @@
 #   - notarization credentials saved as a keychain profile (once):
 #       xcrun notarytool store-credentials pastry-notary --apple-id <you> --team-id <TEAMID>
 #     Override the profile name with NOTARY_PROFILE=..., the identity with SIGN_IDENTITY=...
-#   - gh signed in to GitHub
+#   - gh signed in to GitHub (and, for Homebrew, the H3XY/homebrew-tap repo; override with TAP_REPO=...)
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -73,3 +73,18 @@ git push origin "refs/tags/$TAG"   # full ref name, so it can never be mistaken 
 gh release create "$TAG" "$ZIP" "$ZIP.sha256" \
   --verify-tag --title "Pastry $TAG" --notes-file build/notes.md --generate-notes
 echo "✓ Published Pastry $TAG"
+
+# 5. Point the Homebrew cask at the new release (skipped if the tap repo doesn't exist).
+TAP_REPO="${TAP_REPO:-H3XY/homebrew-tap}"
+if gh repo view "$TAP_REPO" >/dev/null 2>&1; then
+  TAP_DIR="$(mktemp -d)"
+  gh repo clone "$TAP_REPO" "$TAP_DIR" -- -q
+  SHA=$(cut -d' ' -f1 "$ZIP.sha256")
+  sed -i '' -E "s/^  version \".*\"/  version \"$VERSION\"/; s/^  sha256 \".*\"/  sha256 \"$SHA\"/" "$TAP_DIR/Casks/pastry.rb"
+  git -C "$TAP_DIR" commit -qam "Pastry $TAG"
+  git -C "$TAP_DIR" push -q
+  rm -rf "$TAP_DIR"
+  echo "✓ Updated Homebrew cask in $TAP_REPO"
+else
+  echo "• Skipped Homebrew: $TAP_REPO not found"
+fi
