@@ -19,6 +19,16 @@ Press **⇧⌘V** anywhere to bring up everything you've copied, search it, and 
 
 ## Install
 
+### Download
+
+1. Get **Pastry-vX.Y.Z.zip** from the [latest release](https://github.com/H3XY/Pastry/releases/latest) and unzip it.
+2. Drag **Pastry.app** into your Applications folder and open it.
+3. Pastry isn't notarized by Apple, so macOS blocks it the first time. Go to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway**.
+
+It runs on macOS 13 or later, on Apple Silicon and Intel Macs.
+
+### Build from source
+
 Requires macOS 13 or later and Xcode (or the Command Line Tools).
 
 ```bash
@@ -27,7 +37,7 @@ cd Pastry
 ./build.sh --install
 ```
 
-This builds `Pastry.app`, copies it to `~/Applications`, and launches it. Look for the clipboard icon in your menu bar.
+This builds `Pastry.app`, copies it to `~/Applications`, and launches it. Look for the pasty in your menu bar.
 
 ### Auto-paste permission
 
@@ -57,6 +67,7 @@ To paste straight into the app you're using, Pastry needs **Accessibility** acce
 | `Sources/PanelController.swift` | Non-activating floating panel, so the app you were typing in keeps focus, plus keyboard handling and the simulated ⌘V |
 | `Sources/HistoryView.swift` | The SwiftUI list UI |
 | `Sources/App.swift` | Menu bar item and settings |
+| `Sources/MenuBarIcon.swift` | Draws the one-color pasty in the menu bar |
 | `tools/make-icon.swift` | Draws the pasty app icon into `Resources/AppIcon.icns` (run `xcrun swift tools/make-icon.swift`) |
 
 ## Contributing
@@ -64,6 +75,7 @@ To paste straight into the app you're using, Pastry needs **Accessibility** acce
 - `main` is the released code and `dev` is where work comes together.
 - Do work on a feature branch, open a pull request into `dev`, and once `dev` is ready, open a pull request from `dev` into `main`.
 - The **Build** workflow compiles the app on every pull request and on every push to `dev` and `main`.
+- **Releasing:** bump `CFBundleShortVersionString` in `Info.plist` through the usual PRs, then tag `main` (`git tag v1.2.3 && git push origin v1.2.3`). The **Release** workflow builds a universal app and publishes it.
 
 ## Known limitations
 
