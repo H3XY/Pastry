@@ -56,6 +56,12 @@ To paste straight into the app you're using, Pastry needs **Accessibility** acce
 | `Sources/HistoryView.swift` | The SwiftUI list UI |
 | `Sources/App.swift` | Menu bar item and settings |
 
+## Contributing
+
+- `main` is the released code and `dev` is where work comes together.
+- Do work on a feature branch, open a pull request into `dev`, and once `dev` is ready, open a pull request from `dev` into `main`.
+- The **Build** workflow compiles the app on every pull request and on every push to `dev` and `main`.
+
 ## Known limitations
 
 - Rich text is stored as plain text, so formatting is lost when pasting from history.

@@ -1,0 +1,35 @@
+# Checks every change to Pastry on GitHub's Macs, so a broken build is
+# caught on the dev → main pull request before it reaches main.
+#
+# - Pushes to dev/main and pull requests: compile the app and keep the built
+#   Pastry.app (zipped) as a run artifact.
+name: Build
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Swift version
+        run: xcrun swiftc --version
+
+      - name: Build
+        run: ./build.sh
+
+      - name: Zip app
+        run: ditto -c -k --keepParent build/Pastry.app build/Pastry.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pastry-app
+          path: build/Pastry.zip
