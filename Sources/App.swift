@@ -35,7 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         hotKey.register(HotkeyPreset.current)
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        statusItem.button?.image = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "Pastry")
+        statusItem.button?.image = MenuBarIcon.make()
         menu.delegate = self
         statusItem.menu = menu
 
