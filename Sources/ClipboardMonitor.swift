@@ -56,7 +56,8 @@ final class ClipboardMonitor {
             store.add(ClipItem(kind: .files, files: urls.map(\.path), sourceApp: source))
         } else if let s = pb.string(forType: .string),
                   !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            store.add(ClipItem(kind: .text, text: s, sourceApp: source))
+            store.add(ClipItem(kind: .text, text: s, sourceApp: source),
+                      rich: RichData(rtf: pb.data(forType: .rtf), html: pb.data(forType: .html)))
         } else if let png = pngData() {
             store.addImage(png: png, source: source)
         }

@@ -69,7 +69,7 @@ struct HistoryView: View {
 
             HStack(spacing: 10) {
                 if model.axTrusted {
-                    Text("↩ paste   ⌘P pin   ⌘⌫ delete   esc close")
+                    Text("↩ paste   ⇧↩ plain text   ⌘P pin   ⌘⌫ delete   esc")
                         .font(.system(size: 10.5)).foregroundStyle(.secondary)
                 } else {
                     Button(action: onOpenAccessibility) {
