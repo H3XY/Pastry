@@ -1,0 +1,58 @@
+# Publishes a GitHub Release when a version tag (v1.2.3) is pushed.
+#
+# Builds a universal Pastry.app (Apple Silicon + Intel), zips it, and attaches
+# it to a release named after the tag. The tag must match
+# CFBundleShortVersionString in Info.plist.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tag matches app version
+        run: |
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" Info.plist)
+          if [[ "v$VERSION" != "$GITHUB_REF_NAME" ]]; then
+            echo "Tag $GITHUB_REF_NAME does not match Info.plist version $VERSION"; exit 1
+          fi
+
+      - name: Build universal app
+        run: UNIVERSAL=1 SIGN_IDENTITY=- ./build.sh
+
+      - name: Zip app
+        run: |
+          ditto -c -k --keepParent build/Pastry.app "Pastry-$GITHUB_REF_NAME.zip"
+          shasum -a 256 "Pastry-$GITHUB_REF_NAME.zip" | tee "Pastry-$GITHUB_REF_NAME.zip.sha256"
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > notes.md <<'EOF'
+          ## Install
+
+          1. Download **Pastry-${{ github.ref_name }}.zip** below and unzip it.
+          2. Drag **Pastry.app** into your Applications folder.
+          3. Open it. Pastry isn't notarized by Apple, so macOS will block it the first time:
+             go to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway**.
+          4. Allow **Accessibility** when asked (System Settings → Privacy & Security → Accessibility),
+             so Pastry can paste for you.
+
+          Then press **⇧⌘V** anywhere. Look for the pasty in your menu bar. 🥟
+
+          Works on macOS 13 or later, on Apple Silicon and Intel Macs.
+          EOF
+          gh release create "$GITHUB_REF_NAME" \
+            "Pastry-$GITHUB_REF_NAME.zip" "Pastry-$GITHUB_REF_NAME.zip.sha256" \
+            --title "Pastry $GITHUB_REF_NAME" \
+            --notes-file notes.md \
+            --generate-notes
