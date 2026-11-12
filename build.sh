@@ -7,6 +7,7 @@ cd "$(dirname "$0")"
 APP="build/Pastry.app"
 # UNIVERSAL=1 builds for both Apple Silicon and Intel (used for releases);
 # otherwise only this Mac's architecture, which is faster.
+# SWIFT_FLAGS adds compiler flags, e.g. SWIFT_FLAGS="-D APPSTORE" for the App Store build.
 if [[ "${UNIVERSAL:-}" == "1" ]]; then ARCHS=(arm64 x86_64); else ARCHS=("$(uname -m)"); fi
 
 rm -rf "$APP" build/slices
@@ -15,6 +16,7 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" build/slices
 for ARCH in "${ARCHS[@]}"; do
   xcrun swiftc -O -swift-version 5 -parse-as-library \
     -target "$ARCH-apple-macos13.0" \
+    ${SWIFT_FLAGS:-} \
     Sources/*.swift \
     -o "build/slices/Pastry-$ARCH"
 done
@@ -22,6 +24,7 @@ lipo -create build/slices/Pastry-* -output "$APP/Contents/MacOS/Pastry"
 
 cp Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+cp Resources/PrivacyInfo.xcprivacy "$APP/Contents/Resources/PrivacyInfo.xcprivacy"
 # Sign with a real certificate when one is available, so macOS keeps the
 # Accessibility permission across rebuilds. An ad-hoc signature (the fallback,
 # also used on CI) changes on every build and macOS then forgets the permission.
