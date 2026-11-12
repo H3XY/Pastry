@@ -84,7 +84,7 @@ final class UpdateChecker {
         NSApp.activate(ignoringOtherApps: true)
         let a = NSAlert()
         a.messageText = "Pastry \(release.version) is available"
-        a.informativeText = "You have \(Self.currentVersion). Download the new version from GitHub, then replace Pastry in your Applications folder."
+        a.informativeText = "You have \(Self.currentVersion). Download the new version from GitHub, unzip it and open it, then choose Move to Applications to replace this one."
         a.addButton(withTitle: "Download")
         a.addButton(withTitle: "Later")
         a.addButton(withTitle: "Skip This Version")

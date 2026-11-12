@@ -26,6 +26,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let recorder = ShortcutRecorder()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Opened from Downloads (or anywhere else)? Offer to move to Applications and relaunch there.
+        if AppMover.moveIfNeeded() { return }
+
         store = ClipStore()
         monitor = ClipboardMonitor(store: store)
         monitor.start()
@@ -43,13 +46,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         if !UserDefaults.standard.bool(forKey: "didFirstLaunch") {
             UserDefaults.standard.set(true, forKey: "didFirstLaunch")
-            try? SMAppService.mainApp.register() // launch at login by default
             if !AXIsProcessTrusted() { panel.openAccessibility() }
         }
+        syncLaunchAtLogin()
         updater.checkIfDue()
     }
 
-    func applicationWillTerminate(_ notification: Notification) { store.saveNow() }
+    func applicationWillTerminate(_ notification: Notification) { store?.saveNow() }
+
+    /// Launch at login is on by default. The choice is remembered separately from macOS's login-item
+    /// record, so after Pastry moves or is replaced by an update it re-registers at its new location.
+    private var wantsLaunchAtLogin: Bool {
+        get { UserDefaults.standard.object(forKey: "launchAtLogin") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "launchAtLogin") }
+    }
+
+    private func syncLaunchAtLogin() {
+        let service = SMAppService.mainApp
+        if wantsLaunchAtLogin {
+            if service.status != .enabled { try? service.register() }
+        } else if service.status == .enabled {
+            try? service.unregister()
+        }
+    }
 
     // Rebuilt every time it opens so check marks are current.
     func menuNeedsUpdate(_ menu: NSMenu) {
@@ -154,8 +173,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func pickSize(_ sender: NSMenuItem) { store.maxItems = sender.tag }
     @objc private func toggleLogin() {
         do {
-            if SMAppService.mainApp.status == .enabled { try SMAppService.mainApp.unregister() }
-            else { try SMAppService.mainApp.register() }
+            if SMAppService.mainApp.status == .enabled {
+                try SMAppService.mainApp.unregister()
+                wantsLaunchAtLogin = false
+            } else {
+                try SMAppService.mainApp.register()
+                wantsLaunchAtLogin = true
+            }
         } catch {
             NSAlert(error: error).runModal()
         }
