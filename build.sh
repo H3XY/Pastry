@@ -1,5 +1,6 @@
 #!/bin/bash
-# Builds Pastry.app. Pass --install to copy it to ~/Applications and launch it.
+# Builds Pastry.app. Pass --install to copy it to /Applications (or ~/Applications
+# if /Applications isn't writable) and launch it.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -32,10 +33,15 @@ codesign --force --sign "${IDENTITY:--}" "$APP"
 echo "Built $APP (signed: $IDENTITY)"
 
 if [[ "${1:-}" == "--install" ]]; then
-  DEST="$HOME/Applications/Pastry.app"
+  if [[ -w /Applications ]]; then DIR="/Applications"; else DIR="$HOME/Applications"; fi
+  DEST="$DIR/Pastry.app"
   pkill -x Pastry 2>/dev/null || true
-  mkdir -p "$HOME/Applications"
+  mkdir -p "$DIR"
   rm -rf "$DEST"
+  # Remove a copy left in the other location by older installs, so there is only one Pastry.
+  for OLD in "/Applications/Pastry.app" "$HOME/Applications/Pastry.app"; do
+    if [[ "$OLD" != "$DEST" ]]; then rm -rf "$OLD"; fi
+  done
   cp -R "$APP" "$DEST"
   open "$DEST"
   echo "Installed and launched $DEST"

@@ -170,5 +170,15 @@ test("Custom shortcut labels and rules") {
     expect(HotkeyPreset.keyName(keyCode: 9, characters: "v") == "V", "letters upper-cased")
 }
 
+test("Knowing when Pastry is already in Applications") {
+    let home = "/Users/test"
+    expect(AppMover.isInApplications("/Applications/Pastry.app", home: home), "system Applications")
+    expect(AppMover.isInApplications("/Users/test/Applications/Pastry.app", home: home), "user Applications")
+    expect(AppMover.isInApplications("/Applications/Utilities/Pastry.app", home: home), "subfolder")
+    expect(!AppMover.isInApplications("/Users/test/Downloads/Pastry.app", home: home), "Downloads")
+    expect(!AppMover.isInApplications("/Applications Backup/Pastry.app", home: home), "look-alike folder")
+    expect(!AppMover.isInApplications("/Users/test/Applications/../Downloads/Pastry.app", home: home), "path tricks")
+}
+
 print("\n\(passed) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)

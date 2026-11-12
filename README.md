@@ -43,7 +43,7 @@ cd Pastry
 ./build.sh --install
 ```
 
-This builds `Pastry.app`, copies it to `~/Applications`, and launches it. Look for the pasty in your menu bar.
+This builds `Pastry.app`, copies it to `/Applications` (or `~/Applications` if you can't write there), and launches it. Look for the pasty in your menu bar.
 
 ### Auto-paste permission
 
