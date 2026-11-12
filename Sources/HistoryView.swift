@@ -111,6 +111,11 @@ struct ClipRow: View {
         return f
     }()
 
+    /// "now" for the last few seconds (and never "in 0s" if the clock is a hair behind), then "2m ago" etc.
+    static func age(of date: Date, now: Date = Date()) -> String {
+        now.timeIntervalSince(date) < 5 ? "now" : relative.localizedString(for: date, relativeTo: now)
+    }
+
     private var secondary: Color { selected ? .white.opacity(0.75) : .secondary }
 
     var body: some View {
@@ -126,7 +131,7 @@ struct ClipRow: View {
                 HStack(spacing: 4) {
                     if item.pinned { Image(systemName: "pin.fill") }
                     if let app = item.sourceApp { Text(app); Text("·") }
-                    Text(Self.relative.localizedString(for: item.date, relativeTo: Date()))
+                    Text(Self.age(of: item.date))
                 }
                 .font(.system(size: 10))
                 .foregroundStyle(secondary)
