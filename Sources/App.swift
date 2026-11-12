@@ -26,8 +26,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let recorder = ShortcutRecorder()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if !APPSTORE // the App Store installs into Applications itself
         // Opened from Downloads (or anywhere else)? Offer to move to Applications and relaunch there.
         if AppMover.moveIfNeeded() { return }
+        #endif
 
         store = ClipStore()
         monitor = ClipboardMonitor(store: store)
@@ -49,7 +51,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if !AXIsProcessTrusted() { panel.openAccessibility() }
         }
         syncLaunchAtLogin()
+        #if !APPSTORE // the App Store handles updates
         updater.checkIfDue()
+        #endif
     }
 
     func applicationWillTerminate(_ notification: Notification) { store?.saveNow() }
@@ -74,11 +78,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
+        #if !APPSTORE
         if let release = updater.available {
             menu.addItem(NSMenuItem(title: "Update Available: \(release.version)…",
                                     action: #selector(showUpdate), keyEquivalent: ""))
             menu.addItem(.separator())
         }
+        #endif
 
         let show = NSMenuItem(title: "Show Clipboard   \(HotkeyPreset.current.label)",
                               action: #selector(showPanel), keyEquivalent: "")
@@ -125,7 +131,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Clear History (keeps pinned)", action: #selector(clear), keyEquivalent: ""))
         menu.addItem(.separator())
+        #if !APPSTORE
         menu.addItem(NSMenuItem(title: "Check for Updates…", action: #selector(checkUpdates), keyEquivalent: ""))
+        #endif
         let version = NSMenuItem(title: "Pastry \(UpdateChecker.currentVersion)", action: nil, keyEquivalent: "")
         version.isEnabled = false
         menu.addItem(version)

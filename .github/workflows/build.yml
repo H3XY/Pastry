@@ -29,6 +29,12 @@ jobs:
       - name: Test
         run: ./test.sh
 
+      - name: Build App Store variant
+        run: SIGN_IDENTITY=- SWIFT_FLAGS="-D APPSTORE" ./build.sh
+
+      - name: Rebuild direct-download app for the artifact
+        run: ./build.sh
+
       - name: Zip app
         run: ditto -c -k --keepParent build/Pastry.app build/Pastry.zip
 
