@@ -52,7 +52,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        let show = NSMenuItem(title: "Show Pastry   \(HotkeyPreset.current.label)",
+        let show = NSMenuItem(title: "Show Clipboard   \(HotkeyPreset.current.label)",
                               action: #selector(showPanel), keyEquivalent: "")
         menu.addItem(show)
         menu.addItem(.separator())
