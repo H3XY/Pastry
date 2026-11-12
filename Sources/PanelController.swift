@@ -54,7 +54,9 @@ final class PanelController: NSObject, NSWindowDelegate {
         model.focusToken += 1
         if keyMonitor == nil {
             keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-                MainActor.assumeIsolated { self?.handle(event) ?? event }
+                // Returning a Bool (not the NSEvent) keeps the event out of the main-actor hop.
+                let consumed = MainActor.assumeIsolated { self?.handle(event) ?? false }
+                return consumed ? nil : event
             }
         }
     }
@@ -80,50 +82,52 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
 
-    private func handle(_ event: NSEvent) -> NSEvent? {
+    private func handle(_ event: NSEvent) -> Bool { // true = handled, swallow the key
         let items = model.visible(store)
         let flags = event.modifierFlags.intersection([.command, .option, .control, .shift])
 
         switch event.keyCode {
         case 53: // esc
-            hide(); return nil
+            hide(); return true
         case 125: // down
             if !items.isEmpty { model.selection = min(model.selection + 1, items.count - 1) }
-            return nil
+            return true
         case 126: // up
             model.selection = max(model.selection - 1, 0)
-            return nil
-        case 36, 76: // return / enter
-            if items.indices.contains(model.selection) { paste(items[model.selection]) }
-            return nil
+            return true
+        case 36, 76: // return / enter; with ⇧ pastes without formatting
+            if items.indices.contains(model.selection) {
+                paste(items[model.selection], plainText: flags == .shift)
+            }
+            return true
         default: break
         }
 
-        guard flags == .command else { return event }
+        guard flags == .command else { return false }
         let sel = items.indices.contains(model.selection) ? items[model.selection] : nil
 
         if event.keyCode == 51, let sel { // ⌘⌫
             store.remove(sel.id)
             model.selection = min(model.selection, max(model.visible(store).count - 1, 0))
-            return nil
+            return true
         }
         switch event.charactersIgnoringModifiers?.lowercased() {
         case "p":
             if let sel { store.togglePin(sel.id) }
-            return nil
+            return true
         case "w":
-            hide(); return nil
+            hide(); return true
         case let c? where c.count == 1 && ("1"..."9").contains(c):
             let i = Int(c)! - 1
             if items.indices.contains(i) { paste(items[i]) }
-            return nil
+            return true
         default:
-            return event
+            return false
         }
     }
 
-    func paste(_ item: ClipItem) {
-        store.write(item)
+    func paste(_ item: ClipItem, plainText: Bool = false) {
+        store.write(item, plainText: plainText)
         monitor.markOwnWrite()
         if !item.pinned { store.bumpToTop(item.id) }
         hide()

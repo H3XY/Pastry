@@ -22,6 +22,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var hotKey: HotKey!
     private var statusItem: NSStatusItem!
     private let menu = NSMenu()
+    private let updater = UpdateChecker()
+    private let recorder = ShortcutRecorder()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         store = ClipStore()
@@ -44,6 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             try? SMAppService.mainApp.register() // launch at login by default
             if !AXIsProcessTrusted() { panel.openAccessibility() }
         }
+        updater.checkIfDue()
     }
 
     func applicationWillTerminate(_ notification: Notification) { store.saveNow() }
@@ -51,6 +54,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // Rebuilt every time it opens so check marks are current.
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
+
+        if let release = updater.available {
+            menu.addItem(NSMenuItem(title: "Update Available: \(release.version)…",
+                                    action: #selector(showUpdate), keyEquivalent: ""))
+            menu.addItem(.separator())
+        }
 
         let show = NSMenuItem(title: "Show Clipboard   \(HotkeyPreset.current.label)",
                               action: #selector(showPanel), keyEquivalent: "")
@@ -63,12 +72,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let hk = NSMenuItem(title: "Shortcut", action: nil, keyEquivalent: "")
         let hkMenu = NSMenu()
-        for p in HotkeyPreset.all {
+        for p in HotkeyPreset.all + [HotkeyPreset.custom].compactMap({ $0 }) {
             let i = NSMenuItem(title: p.label, action: #selector(pickHotkey(_:)), keyEquivalent: "")
             i.representedObject = p.id
             i.state = p.id == HotkeyPreset.current.id ? .on : .off
             hkMenu.addItem(i)
         }
+        hkMenu.addItem(.separator())
+        hkMenu.addItem(NSMenuItem(title: "Record Custom Shortcut…", action: #selector(recordHotkey), keyEquivalent: ""))
         hk.submenu = hkMenu
         menu.addItem(hk)
 
@@ -95,6 +106,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Clear History (keeps pinned)", action: #selector(clear), keyEquivalent: ""))
         menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Check for Updates…", action: #selector(checkUpdates), keyEquivalent: ""))
+        let version = NSMenuItem(title: "Pastry \(UpdateChecker.currentVersion)", action: nil, keyEquivalent: "")
+        version.isEnabled = false
+        menu.addItem(version)
         menu.addItem(NSMenuItem(title: "Quit Pastry", action: #selector(quit), keyEquivalent: "q"))
 
         menu.items.forEach { $0.target = self }
@@ -109,15 +124,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func togglePause() { monitor.paused.toggle() }
     @objc private func pickHotkey(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String,
-              let preset = HotkeyPreset.all.first(where: { $0.id == id }) else { return }
+              let preset = (HotkeyPreset.all + [HotkeyPreset.custom].compactMap({ $0 }))
+                .first(where: { $0.id == id }) else { return }
         UserDefaults.standard.set(id, forKey: "hotkey")
-        if !hotKey.register(preset) {
-            let alert = NSAlert()
-            alert.messageText = "\(preset.label) is already used by another app."
-            alert.informativeText = "Pick a different shortcut."
-            alert.runModal()
+        if !hotKey.register(preset) { warnTaken(preset) }
+    }
+    @objc private func recordHotkey() {
+        hotKey.unregister() // so pressing the current shortcut gets recorded instead of opening Pastry
+        recorder.start { [weak self] new in
+            guard let self else { return }
+            guard let new else { self.hotKey.register(HotkeyPreset.current); return }
+            if self.hotKey.register(new) {
+                HotkeyPreset.saveCustom(new)
+            } else {
+                self.hotKey.register(HotkeyPreset.current)
+                self.warnTaken(new)
+            }
         }
     }
+    private func warnTaken(_ preset: HotkeyPreset) {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = "\(preset.label) is already used by another app."
+        alert.informativeText = "Pick a different shortcut."
+        alert.runModal()
+    }
+    @objc private func checkUpdates() { updater.check(userInitiated: true) }
+    @objc private func showUpdate() { if let r = updater.available { updater.offer(r) } }
     @objc private func pickSize(_ sender: NSMenuItem) { store.maxItems = sender.tag }
     @objc private func toggleLogin() {
         do {
