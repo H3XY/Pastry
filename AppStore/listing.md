@@ -9,8 +9,8 @@ Pastry – Clipboard History
 ## Subtitle (30 max)
 Every copy, one shortcut away
 
-## Promotional text (170 max)
-Press ⇧⌘V anywhere to see everything you've copied, search it, and paste it right where you are. Free, private, and lives in your menu bar.
+## Promotional text (170 max; App Store Connect rejects key symbols like ⇧⌘ here)
+Press Shift-Command-V anywhere to see everything you've copied, search it, and paste it right where you are. Free, private, and lives in your menu bar.
 
 ## Description (4000 max)
 Pastry remembers everything you copy, so you never lose a link, a snippet, or a screenshot again.
