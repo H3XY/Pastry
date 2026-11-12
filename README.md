@@ -23,6 +23,16 @@ Press **⇧⌘V** anywhere to bring up everything you've copied, search it, and 
 
 ## Install
 
+### Homebrew
+
+```bash
+brew tap h3xy/tap
+brew trust h3xy/tap
+brew install --cask pastry
+```
+
+Update with `brew upgrade --cask pastry`.
+
 ### Download
 
 1. Get **Pastry-vX.Y.Z.zip** from the [latest release](https://github.com/H3XY/Pastry/releases/latest) and unzip it.
@@ -85,7 +95,7 @@ To paste straight into the app you're using, Pastry needs **Accessibility** acce
 - `main` is the released code and `dev` is where work comes together.
 - Do work on a feature branch, open a pull request into `dev`, and once `dev` is ready, open a pull request from `dev` into `main`.
 - The **Build** workflow compiles the app and runs the tests (`./test.sh`) on every pull request and on every push to `dev` and `main`.
-- **Releasing:** bump `CFBundleShortVersionString` in `Info.plist` through the usual PRs, then on an up-to-date `main` run `./release.sh v1.2.3`. It builds a universal app, signs it with Developer ID, has Apple notarize it, then tags the commit and publishes the GitHub Release. The setup it needs is listed at the top of `release.sh`.
+- **Releasing:** bump `CFBundleShortVersionString` in `Info.plist` through the usual PRs, then on an up-to-date `main` run `./release.sh v1.2.3`. It builds a universal app, signs it with Developer ID, has Apple notarize it, then tags the commit, publishes the GitHub Release, and updates the Homebrew cask in [H3XY/homebrew-tap](https://github.com/H3XY/homebrew-tap). The setup it needs is listed at the top of `release.sh`.
 
 ## Known limitations
 
