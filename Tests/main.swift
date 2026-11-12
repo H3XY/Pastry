@@ -180,5 +180,14 @@ test("Knowing when Pastry is already in Applications") {
     expect(!AppMover.isInApplications("/Users/test/Applications/../Downloads/Pastry.app", home: home), "path tricks")
 }
 
+test("Item ages read naturally") {
+    MainActor.assumeIsolated {
+        let now = Date()
+        expect(ClipRow.age(of: now.addingTimeInterval(0.3), now: now) == "now", "a hair in the future is now")
+        expect(ClipRow.age(of: now.addingTimeInterval(-2), now: now) == "now", "2 seconds ago is now")
+        expect(ClipRow.age(of: now.addingTimeInterval(-120), now: now).contains("2"), "2 minutes ago")
+    }
+}
+
 print("\n\(passed) checks passed, \(failures) failed")
 exit(failures == 0 ? 0 : 1)
