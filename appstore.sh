@@ -41,6 +41,9 @@ UNIVERSAL=1 SIGN_IDENTITY=- SWIFT_FLAGS="-D APPSTORE" ./build.sh
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$APP/Contents/Info.plist"
 cp "$PROFILE" "$APP/Contents/embedded.provisionprofile"
+# A profile downloaded with a browser carries com.apple.quarantine, and App Store Connect
+# rejects packages containing it (error 91109). Strip all extended attributes before signing.
+xattr -cr "$APP"
 
 # 2. Sandboxed signature for the App Store.
 cat > build/AppStore.entitlements <<EOF
