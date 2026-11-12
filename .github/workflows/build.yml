@@ -1,7 +1,7 @@
 # Checks every change to Pastry on GitHub's Macs, so a broken build is
 # caught on the dev → main pull request before it reaches main.
 #
-# - Pushes to dev/main and pull requests: compile the app and keep the built
+# - Pushes to dev/main and pull requests: compile the app, run the tests, and keep the built
 #   Pastry.app (zipped) as a run artifact.
 name: Build
 
@@ -25,6 +25,9 @@ jobs:
 
       - name: Build
         run: ./build.sh
+
+      - name: Test
+        run: ./test.sh
 
       - name: Zip app
         run: ditto -c -k --keepParent build/Pastry.app build/Pastry.zip

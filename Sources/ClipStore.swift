@@ -16,6 +16,11 @@ struct ClipItem: Codable, Identifiable, Equatable {
     var date = Date()
     var pinned = false
     var sourceApp: String?
+    /// Formatting copied alongside the text, stored as files in `rich/` (nil when the copy was plain text).
+    var rtfFile: String?
+    var htmlFile: String?
+
+    var isRich: Bool { rtfFile != nil || htmlFile != nil }
 
     func sameContent(as other: ClipItem) -> Bool {
         guard kind == other.kind else { return false }
@@ -49,41 +54,63 @@ struct ClipItem: Codable, Identifiable, Equatable {
     }
 }
 
+/// Formatting that came with a text copy.
+struct RichData {
+    var rtf: Data?
+    var html: Data?
+    var isEmpty: Bool { rtf == nil && html == nil }
+}
+
 @MainActor
 final class ClipStore: ObservableObject {
     @Published private(set) var items: [ClipItem] = []
 
     var maxItems: Int {
-        get { let v = UserDefaults.standard.integer(forKey: "maxItems"); return v > 0 ? v : 200 }
-        set { UserDefaults.standard.set(newValue, forKey: "maxItems"); trim(); save() }
+        get { let v = defaults.integer(forKey: "maxItems"); return v > 0 ? v : 200 }
+        set { defaults.set(newValue, forKey: "maxItems"); trim(); save() }
     }
 
     let dir: URL
     let imagesDir: URL
+    let richDir: URL
     private let file: URL
+    private let defaults: UserDefaults
     private var saveWork: DispatchWorkItem?
     private let thumbCache = NSCache<NSString, NSImage>()
 
-    init() {
+    /// `directory` and `defaults` are injectable so tests can use a throwaway location.
+    init(directory: URL? = nil, defaults: UserDefaults = .standard) {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        dir = base.appendingPathComponent("Pastry", isDirectory: true)
+        dir = directory ?? base.appendingPathComponent("Pastry", isDirectory: true)
         imagesDir = dir.appendingPathComponent("images", isDirectory: true)
+        richDir = dir.appendingPathComponent("rich", isDirectory: true)
         file = dir.appendingPathComponent("history.json")
+        self.defaults = defaults
         try? FileManager.default.createDirectory(at: imagesDir, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: richDir, withIntermediateDirectories: true)
         load()
     }
 
     // MARK: Adding
 
-    func add(_ new: ClipItem) {
+    func add(_ new: ClipItem, rich: RichData? = nil) {
+        var item: ClipItem
         if let i = items.firstIndex(where: { $0.sameContent(as: new) }) {
-            var existing = items.remove(at: i)
-            existing.date = new.date
-            if let app = new.sourceApp { existing.sourceApp = app }
-            items.insert(existing, at: 0)
+            item = items.remove(at: i)
+            item.date = new.date
+            if let app = new.sourceApp { item.sourceApp = app }
         } else {
-            items.insert(new, at: 0)
+            item = new
         }
+        if item.kind == .text, let rich {
+            // The latest copy decides the formatting.
+            deleteRichFiles(of: item)
+            item.rtfFile = nil
+            item.htmlFile = nil
+            if let rtf = rich.rtf { item.rtfFile = writeRich(rtf, name: "\(item.id.uuidString).rtf") }
+            if let html = rich.html { item.htmlFile = writeRich(html, name: "\(item.id.uuidString).html") }
+        }
+        items.insert(item, at: 0)
         trim()
         save()
     }
@@ -124,8 +151,9 @@ final class ClipStore: ObservableObject {
     }
 
     func clearUnpinned() {
-        items.filter { !$0.pinned }.forEach(deleteFiles)
+        let removed = items.filter { !$0.pinned }
         items.removeAll { !$0.pinned }
+        removed.forEach(deleteFiles)
         save()
     }
 
@@ -136,11 +164,22 @@ final class ClipStore: ObservableObject {
 
     // MARK: Pasteboard
 
-    func write(_ item: ClipItem, to pb: NSPasteboard = .general) {
+    func richData(for item: ClipItem) -> RichData {
+        RichData(rtf: item.rtfFile.flatMap { try? Data(contentsOf: richDir.appendingPathComponent($0)) },
+                 html: item.htmlFile.flatMap { try? Data(contentsOf: richDir.appendingPathComponent($0)) })
+    }
+
+    /// Puts an item back on the pasteboard. `plainText` drops any formatting.
+    func write(_ item: ClipItem, to pb: NSPasteboard = .general, plainText: Bool = false) {
         pb.clearContents()
         switch item.kind {
         case .text:
             pb.setString(item.text ?? "", forType: .string)
+            if !plainText {
+                let rich = richData(for: item)
+                if let rtf = rich.rtf { pb.setData(rtf, forType: .rtf) }
+                if let html = rich.html { pb.setData(html, forType: .html) }
+            }
         case .image:
             guard let name = item.imageFile,
                   let png = try? Data(contentsOf: imagesDir.appendingPathComponent(name)) else { return }
@@ -177,10 +216,22 @@ final class ClipStore: ObservableObject {
         }
     }
 
+    private func writeRich(_ data: Data, name: String) -> String? {
+        (try? data.write(to: richDir.appendingPathComponent(name), options: .atomic)) == nil ? nil : name
+    }
+
+    private func deleteRichFiles(of item: ClipItem) {
+        for name in [item.rtfFile, item.htmlFile].compactMap({ $0 }) {
+            try? FileManager.default.removeItem(at: richDir.appendingPathComponent(name))
+        }
+    }
+
+    /// Call only after `item` has been removed from `items`.
     private func deleteFiles(of item: ClipItem) {
+        deleteRichFiles(of: item)
         guard let name = item.imageFile else { return }
         // Only delete if no other item references the same file.
-        if items.contains(where: { $0.imageFile == name && $0.id != item.id }) { return }
+        if items.contains(where: { $0.imageFile == name }) { return }
         try? FileManager.default.removeItem(at: imagesDir.appendingPathComponent(name))
         thumbCache.removeObject(forKey: name as NSString)
     }

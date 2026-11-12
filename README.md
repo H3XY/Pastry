@@ -14,10 +14,11 @@ Press **⇧⌘V** anywhere to bring up everything you've copied, search it, and 
 - **Pop-up history next to your cursor.** Type to search, use ↑ ↓ to move, and press ↩ to paste.
 - **Quick paste:** ⌘1–⌘9 paste one of the first nine items directly.
 - **Pinning:** ⌘P pins an item so it stays at the top and is never trimmed.
-- **Handles text, images and screenshots, and files copied in Finder.**
+- **Handles text, images and screenshots, and files copied in Finder.** Formatted text keeps its formatting (bold, links, fonts); press ⇧↩ to paste it as plain text instead.
 - **History survives restarts.** It's saved to `~/Library/Application Support/Pastry/`.
 - **Respects privacy markers.** Copies that password managers mark as concealed or transient (1Password and others) are never recorded.
-- **Menu bar only:** no Dock icon. The menu has pause recording, history size (50–1000), launch at login, and a shortcut picker (⇧⌘V, ⌃⌘V, ⌥⌘V, ⇧⌘C).
+- **Menu bar only:** no Dock icon. The menu has pause recording, history size (50–1000), launch at login, and a shortcut picker: ⇧⌘V, ⌃⌘V, ⌥⌘V, ⇧⌘C, or record your own.
+- **Update check:** once a day Pastry asks GitHub whether a newer release exists and offers to open the download page. You can also use **Check for Updates…** in the menu.
 - **Lightweight:** plain Swift, AppKit and SwiftUI, with no dependencies and no Xcode project.
 
 ## Install
@@ -42,7 +43,7 @@ cd Pastry
 ./build.sh --install
 ```
 
-This builds `Pastry.app`, copies it to `~/Applications`, and launches it. Look for the pasty in your menu bar.
+This builds `Pastry.app`, copies it to `/Applications` (or `~/Applications` if you can't write there), and launches it. Look for the pasty in your menu bar.
 
 ### Auto-paste permission
 
@@ -57,6 +58,7 @@ To paste straight into the app you're using, Pastry needs **Accessibility** acce
 | ⇧⌘V | Open or close Pastry (changeable from the menu bar) |
 | ↑ / ↓ | Move the selection |
 | ↩ | Paste the selected item |
+| ⇧↩ | Paste it as plain text (no formatting) |
 | ⌘1 – ⌘9 | Paste item 1–9 |
 | ⌘P | Pin or unpin |
 | ⌘⌫ | Delete the item |
@@ -73,16 +75,22 @@ To paste straight into the app you're using, Pastry needs **Accessibility** acce
 | `Sources/HistoryView.swift` | The SwiftUI list UI |
 | `Sources/App.swift` | Menu bar item and settings |
 | `Sources/MenuBarIcon.swift` | Draws the one-color pasty in the menu bar |
+| `Sources/ShortcutRecorder.swift` | The "Record Custom Shortcut…" window |
+| `Sources/UpdateChecker.swift` | Daily check of GitHub for a newer release |
+| `Tests/main.swift` | Tests for history, pinning, formatting, search, versions and shortcuts (run `./test.sh`) |
 | `tools/make-icon.swift` | Draws the pasty app icon into `Resources/AppIcon.icns` (run `xcrun swift tools/make-icon.swift`) |
 
 ## Contributing
 
 - `main` is the released code and `dev` is where work comes together.
 - Do work on a feature branch, open a pull request into `dev`, and once `dev` is ready, open a pull request from `dev` into `main`.
-- The **Build** workflow compiles the app on every pull request and on every push to `dev` and `main`.
+- The **Build** workflow compiles the app and runs the tests (`./test.sh`) on every pull request and on every push to `dev` and `main`.
 - **Releasing:** bump `CFBundleShortVersionString` in `Info.plist` through the usual PRs, then on an up-to-date `main` run `./release.sh v1.2.3`. It builds a universal app, signs it with Developer ID, has Apple notarize it, then tags the commit and publishes the GitHub Release. The setup it needs is listed at the top of `release.sh`.
 
 ## Known limitations
 
-- Rich text is stored as plain text, so formatting is lost when pasting from history.
-- ⇧⌘V overrides "Paste and Match Style" in apps that use it, such as Google Docs and Slack. Pick another shortcut from the menu if that matters to you.
+- ⇧⌘V overrides "Paste and Match Style" in apps that use it, such as Google Docs and Slack. Pick another shortcut from the menu, or record your own, if that matters to you.
+
+## License
+
+[MIT](LICENSE) © 2026 Vivek Reddy
