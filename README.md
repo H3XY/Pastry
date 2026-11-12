@@ -23,7 +23,9 @@ Press **⇧⌘V** anywhere to bring up everything you've copied, search it, and 
 
 1. Get **Pastry-vX.Y.Z.zip** from the [latest release](https://github.com/H3XY/Pastry/releases/latest) and unzip it.
 2. Drag **Pastry.app** into your Applications folder and open it.
-3. Pastry isn't notarized by Apple, so macOS blocks it the first time. Go to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway**.
+3. Allow **Accessibility** when asked, so Pastry can paste for you.
+
+Releases are signed with Developer ID and notarized by Apple, so they open without warnings.
 
 It runs on macOS 13 or later, on Apple Silicon and Intel Macs.
 
@@ -75,7 +77,7 @@ To paste straight into the app you're using, Pastry needs **Accessibility** acce
 - `main` is the released code and `dev` is where work comes together.
 - Do work on a feature branch, open a pull request into `dev`, and once `dev` is ready, open a pull request from `dev` into `main`.
 - The **Build** workflow compiles the app on every pull request and on every push to `dev` and `main`.
-- **Releasing:** bump `CFBundleShortVersionString` in `Info.plist` through the usual PRs, then tag `main` (`git tag v1.2.3 && git push origin v1.2.3`). The **Release** workflow builds a universal app and publishes it.
+- **Releasing:** bump `CFBundleShortVersionString` in `Info.plist` through the usual PRs, then on an up-to-date `main` run `./release.sh v1.2.3`. It builds a universal app, signs it with Developer ID, has Apple notarize it, then tags the commit and publishes the GitHub Release. The setup it needs is listed at the top of `release.sh`.
 
 ## Known limitations
 
