@@ -33,7 +33,7 @@ This builds `Pastry.app`, copies it to `~/Applications`, and launches it. Look f
 
 To paste straight into the app you're using, Pastry needs **Accessibility** access: System Settings → Privacy & Security → Accessibility → turn on Pastry. Without it, choosing an item only copies it to the clipboard and you press ⌘V yourself.
 
-> The build uses an ad-hoc signature, so macOS forgets the Accessibility permission each time you rebuild. If auto-paste stops working after a rebuild, toggle Pastry off and on in that settings list.
+> `build.sh` signs the app with your Apple Development (or Developer ID) certificate if you have one, so the permission survives rebuilds. Without a certificate it falls back to an ad-hoc signature, which changes on every build: if auto-paste stops working after a rebuild, toggle Pastry off and on in that settings list.
 
 ## Keyboard shortcuts
 
