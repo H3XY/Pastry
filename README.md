@@ -96,7 +96,7 @@ To paste straight into the app you're using, Pastry needs **Accessibility** acce
 - Do work on a feature branch, open a pull request into `dev`, and once `dev` is ready, open a pull request from `dev` into `main`.
 - The **Build** workflow compiles the app and runs the tests (`./test.sh`) on every pull request and on every push to `dev` and `main`.
 - **App Store build:** `./appstore.sh` builds a sandboxed version (no GitHub update check or move prompt) as `build/Pastry-AppStore.pkg`, ready for App Store Connect. The setup it needs is listed at the top of the script.
-- **Releasing:** bump `CFBundleShortVersionString` in `Info.plist` through the usual PRs, then on an up-to-date `main` run `./release.sh v1.2.3`. It builds a universal app, signs it with Developer ID, has Apple notarize it, then tags the commit, publishes the GitHub Release, and updates the Homebrew cask in [H3XY/homebrew-tap](https://github.com/H3XY/homebrew-tap). The setup it needs is listed at the top of `release.sh`.
+- **Releasing:** bump `CFBundleShortVersionString` in `Info.plist` through the usual PRs, then on an up-to-date `main` run `./release.sh v1.2.3`. It builds a universal app, signs it with Developer ID, has Apple notarize it, then tags the commit, publishes the GitHub Release, and opens a pull request updating the Homebrew cask in [H3XY/homebrew-tap](https://github.com/H3XY/homebrew-tap). Merge that through the tap's `dev` → `main` flow for `brew upgrade` to see the new version. The setup it needs is listed at the top of `release.sh`.
 
 ## Known limitations
 

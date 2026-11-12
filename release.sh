@@ -74,17 +74,23 @@ gh release create "$TAG" "$ZIP" "$ZIP.sha256" \
   --verify-tag --title "Pastry $TAG" --notes-file build/notes.md --generate-notes
 echo "✓ Published Pastry $TAG"
 
-# 5. Point the Homebrew cask at the new release (skipped if the tap repo doesn't exist).
+# 5. Open a pull request pointing the Homebrew cask at the new release (skipped if the tap
+#    repo doesn't exist). The tap's main and dev only accept reviewed PRs, so this goes into
+#    dev like any other change; merge it, then dev into main, for `brew upgrade` to see it.
 TAP_REPO="${TAP_REPO:-H3XY/homebrew-tap}"
 if gh repo view "$TAP_REPO" >/dev/null 2>&1; then
   TAP_DIR="$(mktemp -d)"
-  gh repo clone "$TAP_REPO" "$TAP_DIR" -- -q
+  TAP_BRANCH="pastry-$TAG"
+  gh repo clone "$TAP_REPO" "$TAP_DIR" -- -q --branch dev
+  git -C "$TAP_DIR" checkout -q -b "$TAP_BRANCH"
   SHA=$(cut -d' ' -f1 "$ZIP.sha256")
   sed -i '' -E "s/^  version \".*\"/  version \"$VERSION\"/; s/^  sha256 \".*\"/  sha256 \"$SHA\"/" "$TAP_DIR/Casks/pastry.rb"
   git -C "$TAP_DIR" commit -qam "Pastry $TAG"
-  git -C "$TAP_DIR" push -q
+  git -C "$TAP_DIR" push -q -u origin "refs/heads/$TAP_BRANCH"
+  TAP_PR=$(cd "$TAP_DIR" && gh pr create --repo "$TAP_REPO" --base dev --head "$TAP_BRANCH" \
+    --title "Pastry $TAG" --body "Updates the Pastry cask to $TAG (opened by release.sh).")
   rm -rf "$TAP_DIR"
-  echo "✓ Updated Homebrew cask in $TAP_REPO"
+  echo "✓ Opened Homebrew cask update: $TAP_PR"
 else
   echo "• Skipped Homebrew: $TAP_REPO not found"
 fi
