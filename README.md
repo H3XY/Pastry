@@ -2,6 +2,9 @@
 
 # Pastry
 
+[![Download for macOS](https://img.shields.io/github/v/release/H3XY/Pastry?label=Download%20for%20macOS&logo=apple&style=for-the-badge&color=E59A35)](https://github.com/H3XY/Pastry/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/H3XY/Pastry/total?style=for-the-badge&color=4A6FD8)](https://github.com/H3XY/Pastry/releases)
+
 A small, native clipboard history app for macOS, made to work like **Win+V** on Windows.
 
 Press **⇧⌘V** anywhere to bring up everything you've copied, search it, and paste any item back into the app you're using.
